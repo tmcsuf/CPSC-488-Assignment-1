@@ -4,9 +4,11 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import numpy as np
+from typeguard import typechecked
 
 class MLP(nn.Module):
-    def __init__(self, input_size: int, hidden_layers: int, output_size: int) -> None:
+    @typechecked
+    def __init__(self, input_size: int, hidden_layers: list[int], output_size: int) -> None:
         super(MLP, self).__init__()
         
         layers = []
@@ -24,10 +26,12 @@ class MLP(nn.Module):
         layers.append(nn.Linear(hidden_layers[-1], output_size))
         
         self.layers = nn.Sequential(*layers)
-        
+
+    @typechecked
     def forward(self, x: t.Tensor) -> t.Tensor:
         return self.layers(x)
-
+    
+@typechecked
 def preprocess(X: np.ndarray, y: np.ndarray, device: str) -> tuple[t.Tensor, t.Tensor, t.Tensor, t.Tensor]:
     # Split data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -45,12 +49,14 @@ def preprocess(X: np.ndarray, y: np.ndarray, device: str) -> tuple[t.Tensor, t.T
     
     return X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor
 
+@typechecked
 def setup_model(input_size: int, hidden_layers: list[int], output_size: int, device: t.device) -> tuple[MLP, nn.Module, t.optim.Optimizer]:
     model = MLP(input_size, hidden_layers, output_size).to(device)
     criterion = nn.MSELoss()
     optimizer = t.optim.Adam(model.parameters(), lr=0.001)
     return model, criterion, optimizer
 
+@typechecked
 def train_model(model: MLP, train_loader: t.utils.data.DataLoader, criterion: nn.Module, optimizer: t.optim.Optimizer, num_epochs: int) -> MLP:
     for epoch in range(num_epochs):
         for i, (inputs, labels) in enumerate(train_loader):
@@ -64,6 +70,7 @@ def train_model(model: MLP, train_loader: t.utils.data.DataLoader, criterion: nn
             optimizer.step()
     return model
 
+@typechecked
 def evaluate_model(model: MLP, criterion: nn.Module, X_test_tensor: t.Tensor, y_test_tensor: t.Tensor) -> float:
     model.eval()
     with t.no_grad():

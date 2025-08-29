@@ -2,14 +2,17 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from typeguard import typechecked
 
 class GradientDescent:
+    @typechecked
     def __init__(self, learning_rate: float=0.001, n_iterations: int=1000, batch_size: int=32) -> None:
         self.learning_rate = learning_rate
         self.n_iterations = n_iterations
         self.batch_size = batch_size
         self.weights = None
-
+        
+    @typechecked
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         X_b = np.c_[np.ones((X.shape[0], 1)), X]
         n_samples = X_b.shape[0]
@@ -27,11 +30,12 @@ class GradientDescent:
                 
                 gradients = 2/self.batch_size * xi.T @ (xi @ self.weights - yi)
                 self.weights = self.weights - self.learning_rate * gradients
-
+    @typechecked
     def predict(self, X: np.ndarray) -> np.ndarray:
         X_b = np.c_[np.ones((X.shape[0], 1)), X]
         return X_b @ self.weights
-
+    
+@typechecked
 def preprocess(dataset: pd.DataFrame, subsample_ratio: float = 1.0) -> tuple[np.ndarray, np.ndarray]:
     # Apply subsampling
     if subsample_ratio < 1.0:
@@ -44,6 +48,7 @@ def preprocess(dataset: pd.DataFrame, subsample_ratio: float = 1.0) -> tuple[np.
 
     return X, y
 
+@typechecked
 def scale_and_split(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     # Scale the features
     scaler = StandardScaler()

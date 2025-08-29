@@ -2,19 +2,22 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from typeguard import typechecked
 
 class LeastSquares:
+    @typechecked
     def __init__(self) -> None:
         self.weights = None
-
+    @typechecked
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         X_b = np.c_[np.ones((X.shape[0], 1)), X]
         self.weights = np.linalg.inv(X_b.T @ X_b) @ X_b.T @ y
-
+    @typechecked
     def predict(self, X: np.ndarray) -> np.ndarray:
         X_b = np.c_[np.ones((X.shape[0], 1)), X]
         return X_b @ self.weights
 
+@typechecked
 def preprocess(dataset: pd.DataFrame, subsample_ratio: float = 1.0) -> tuple[np.ndarray, np.ndarray]:
     # Apply subsampling
     if subsample_ratio < 1.0:
@@ -27,6 +30,7 @@ def preprocess(dataset: pd.DataFrame, subsample_ratio: float = 1.0) -> tuple[np.
 
     return X, y
 
+@typechecked
 def scale_and_split(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     # Scale the features
     scaler = StandardScaler()
