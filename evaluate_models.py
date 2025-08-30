@@ -20,7 +20,10 @@ def add_polynomial_features(x: np.ndarray, order: int) -> np.ndarray:
         x_poly = np.c_[x_poly, x**i]
     return x_poly
 
-def run_tests():
+def run_tests() -> None:
+    '''
+    
+    '''
     results = []
     dataset = pd.read_csv('GasProperties.csv')
     subsample_ratio = 0.4
