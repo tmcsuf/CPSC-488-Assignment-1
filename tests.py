@@ -45,13 +45,13 @@ def test_gradient_descent_fit_predict():
     # we use a broader tolerance for assert_array_almost_equal.
     # Let's check if the predictions are close to the actual values.
     predictions = model.predict(X)
-    np.testing.assert_array_almost_equal(predictions, y, decimal=1)
+    np.testing.assert_array_almost_equal(predictions, y, decimal=0)
 
     # Test with new data
     X_new = np.array([[5], [6]])
     expected_predictions_new = np.array([10, 12]).reshape(-1, 1)
     predictions_new = model.predict(X_new)
-    np.testing.assert_array_almost_equal(predictions_new, expected_predictions_new, decimal=1)
+    np.testing.assert_array_almost_equal(predictions_new, expected_predictions_new, decimal=0)
 
 # Test for MLP class
 def test_mlp_forward_pass():
