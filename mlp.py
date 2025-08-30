@@ -1,100 +1,79 @@
 import torch as t
 import torch.nn as nn
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 import numpy as np
 from typeguard import typechecked
 
-
-
 class MLP(nn.Module):
-    """
-    A simple Multi-Layer Perceptron (MLP) model for regression tasks.
-
-    This class defines a feedforward neural network with a configurable number of
-    hidden layers and neurons, using ReLU activation functions between layers.
-
-    Attributes:
-        layers (nn.Sequential): The sequential container of layers forming the MLP.
-    """
     @typechecked
     def __init__(self, input_size: int, hidden_layers: list[int], output_size: int) -> None:
-        """
-        Initializes the MLP model.
-
-        Args:
-            input_size (int): The number of input features.
-            hidden_layers (list[int]): A list where each element represents the number of neurons
-                                        in a corresponding hidden layer.
-            output_size (int): The number of output features.
-        """
         super(MLP, self).__init__()
         
-        raise NotImplementedError()
+        layers = []
+        
+        # Input layer to first hidden layer
+        layers.append(nn.Linear(input_size, hidden_layers[0]))
+        layers.append(nn.ReLU())
+        
+        # Hidden layers
+        for i in range(len(hidden_layers) - 1):
+            layers.append(nn.Linear(hidden_layers[i], hidden_layers[i+1]))
+            layers.append(nn.ReLU())
+            
+        # Output layer
+        layers.append(nn.Linear(hidden_layers[-1], output_size))
+        
+        self.layers = nn.Sequential(*layers)
 
     @typechecked
     def forward(self, x: t.Tensor) -> t.Tensor:
-        """
-        Performs the forward pass of the MLP.
-
-        Args:
-            x (t.Tensor): The input tensor.
-
-        Returns:
-            t.Tensor: The output tensor from the MLP.
-        """
-        raise NotImplementedError()
+        return self.layers(x)
     
 @typechecked
 def preprocess(X: np.ndarray, y: np.ndarray, device: str) -> tuple[t.Tensor, t.Tensor, t.Tensor, t.Tensor]:
-    """
-    Preprocesses the input data by splitting it into training and testing sets,
-    scaling the features, and converting them to PyTorch tensors.
+    # Split data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Scale the features
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
 
-    Args:
-        X (np.ndarray): The input features as a NumPy array.
-        y (np.ndarray): The target variable as a NumPy array.
-        device (str): The device to move the tensors to (e.g., 'cpu' or 'cuda').
-
-    Returns:
-        tuple[t.Tensor, t.Tensor, t.Tensor, t.Tensor]: A tuple containing:
-            - X_train_tensor (t.Tensor): Scaled training features.
-            - X_test_tensor (t.Tensor): Scaled testing features.
-            - y_train_tensor (t.Tensor): Training target variable.
-            - y_test_tensor (t.Tensor): Testing target variable.
-    """
-    raise NotImplementedError()
+    # Convert to PyTorch tensors
+    X_train_tensor = t.tensor(X_train_scaled, dtype=t.float32).to(device)
+    y_train_tensor = t.tensor(y_train, dtype=t.float32).unsqueeze(1).to(device)
+    X_test_tensor = t.tensor(X_test_scaled, dtype=t.float32).to(device)
+    y_test_tensor = t.tensor(y_test, dtype=t.float32).unsqueeze(1).to(device)
+    
+    return X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor
 
 @typechecked
 def setup_model(input_size: int, hidden_layers: list[int], output_size: int, device: t.device) -> tuple[MLP, nn.Module, t.optim.Optimizer]:
-    """
-    Sets up the MLP model, loss function, and optimizer.
-
-    Args:
-        input_size (int): The number of input features for the MLP.
-        hidden_layers (list[int]): A list defining the architecture of hidden layers.
-        output_size (int): The number of output features for the MLP.
-        device (t.device): The device (CPU or GPU) to deploy the model to.
-
-    Returns:
-        tuple[MLP, nn.Module, t.optim.Optimizer]: A tuple containing:
-            - model (MLP): The initialized MLP model.
-            - criterion (nn.Module): The loss function.
-            - optimizer (t.optim.Optimizer): The optimizer for updating model parameters.
-    """
-    raise NotImplementedError()
+    model = MLP(input_size, hidden_layers, output_size).to(device)
+    criterion = nn.MSELoss()
+    optimizer = t.optim.Adam(model.parameters(), lr=0.001)
+    return model, criterion, optimizer
 
 @typechecked
 def train_model(model: MLP, train_loader: t.utils.data.DataLoader, criterion: nn.Module, optimizer: t.optim.Optimizer, num_epochs: int) -> MLP:
-    """
-    Trains the MLP model using the provided data loader, criterion, and optimizer.
+    for epoch in range(num_epochs):
+        for i, (inputs, labels) in enumerate(train_loader):
+            # Forward pass
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
 
-    Args:
-        model (MLP): The MLP model to be trained.
-        train_loader (t.utils.data.DataLoader): The data loader providing training batches.
-        criterion (nn.Module): The loss function.
-        optimizer (t.optim.Optimizer): The optimizer for updating model parameters.
-        num_epochs (int): The number of training epochs.
+            # Backward and optimize
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+    return model
 
-    Returns:
-        MLP: The trained MLP model.
-    """
-    raise NotImplementedError()
+@typechecked
+def evaluate_model(model: MLP, criterion: nn.Module, X_test_tensor: t.Tensor, y_test_tensor: t.Tensor) -> float:
+    model.eval()
+    with t.no_grad():
+        outputs = model(X_test_tensor)
+        mse = criterion(outputs, y_test_tensor)
+        return mse
